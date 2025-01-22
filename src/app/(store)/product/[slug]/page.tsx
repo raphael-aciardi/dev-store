@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { api } from "@/data/api";
 import { Product } from "@/data/types/products";
+import { Metadata } from "next";
 
 interface ProductProps {
     params: { slug: string }
@@ -16,10 +17,25 @@ async function getProduct(slug: string): Promise<Product> {
     const product = await response.json()
     return product
   }
-  export default async function ProductPage({ params }: ProductProps) {
+
+  export async function generateMetadata({ params }: ProductProps) : Promise<Metadata> {
     const product = await getProduct(params.slug)
 
-    console.log(product)
+    return {
+      title: product.title ,
+    }
+  }
+
+  export async function generateStaticParams() {
+    const response = await api('/products/featured')
+    const products: Product[] = await response.json()
+    return products.map(product => {
+        return { slug: product.slug }
+    })
+  }
+
+  export default async function ProductPage({ params }: ProductProps) {
+    const product = await getProduct(params.slug)
 
     return (
         <div className="relative grid max-h-[860px] grid-cols-3">
@@ -40,8 +56,8 @@ async function getProduct(slug: string): Promise<Product> {
                     {product.description}
                 </p>
                 <div className="mt-8 flex items-center gap-3">
-                    <span className="inline-block rounded-full bg-violet-500 px-5 py-2.5 text-semibold">R$129</span>
-                    <span className="text-sm text-zinc-400">Em 12x s/ juros de R$10,75</span>
+                    <span className="inline-block rounded-full bg-violet-500 px-5 py-2.5 text-semibold">{product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    <span className="text-sm text-zinc-400">{product.description}</span>
                 </div>
                 <div className="mt-8 space-y-4">
                     <span className="block font-semibold">Tamanhos</span>
